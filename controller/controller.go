@@ -66,3 +66,18 @@ func LoginController(w http.ResponseWriter, r *http.Request) {
 		"token" : token,
 	})
 }
+
+func ProfileController(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Entered in Profile controller.....")
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Only GET method allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"name" : "Amit",
+		"email" : "aksharma@gmail.com",
+	})
+}
