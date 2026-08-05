@@ -47,14 +47,13 @@ func LoginController(w http.ResponseWriter, r *http.Request) {
 
 	// read json
 	var loginRequest model.LoginRequest
-	err := json.NewDecoder(r.Body).Decode(&loginRequest)
+	err := json.NewDecoder(r.Body).Decode(&loginRequest) // decoder ignore "name"
 
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
-	err = service.Login(loginRequest)
-
+	token, err := service.Login(loginRequest)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -62,5 +61,8 @@ func LoginController(w http.ResponseWriter, r *http.Request) {
 
 	// sending response
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode("Login Successful")
+	json.NewEncoder(w).Encode(map[string]string{
+		"message" : "Login Successful",
+		"token" : token,
+	})
 }
