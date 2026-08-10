@@ -1,19 +1,30 @@
 package main
 
 import (
+	"auth-api/db"
 	"auth-api/handler"
 	"fmt"
+	"log"
 	"net/http"
 )
 
 func main() {
-	fmt.Println("Auth-API server")
 
-	handler.RegisterRoutes() // register route
+	database, err := db.ConnectDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer database.Close()
+
+	fmt.Println("Database connected")
+
+	handler.RegisterRoutes(database)
+
 	fmt.Println("Starting Server on :8080")
 
-	err := http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Server Error:", err)
 	}
 }

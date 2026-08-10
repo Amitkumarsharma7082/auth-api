@@ -3,21 +3,20 @@ package service
 import (
 	"auth-api/db"
 	"auth-api/model"
+	"database/sql"
 	"errors"
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func Singup(user model.User) error {
-	fmt.Println("Service called signup")
-	_, ok := db.Users[user.Email]
-	if ok {
-		return errors.New("user already exists")
-	}
-	db.Users[user.Email] = user
-	fmt.Println("User saved successfully")
+func Singup(database *sql.DB, user model.User) error {
+	err := db.CreateUser(database, user)
 
+	if err != nil {
+		return err
+	}
+	fmt.Println("User saved successfully")
 	return nil
 }
 
