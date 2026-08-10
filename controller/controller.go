@@ -4,82 +4,73 @@ import (
 	"auth-api/model"
 	"auth-api/service"
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-func SingupController(database *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func SingupController(database *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
 		fmt.Println("Entered in singup controller")
-		// only post method
-		if r.Method != http.MethodPost {
-			http.Error(w, "Only POST method allowed", http.StatusMethodNotAllowed)
-			return
-		}
 
 		// read json body
 		var user model.User
 
 		// json->struct
-		err := json.NewDecoder(r.Body).Decode(&user)
+		err := c.ShouldBindJSON(&user)
 		if err != nil {
-			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			c.JSON(400, gin.H{
+				"error": "Invalid JSON",
+			})
 			return
 		}
 
 		err = service.Singup(database, user)
+		c.JSON(200, gin.H{
+			"message": "Signup Successful",
+		})
+	}
+}
+
+func LoginController(database *sql.DB) gin.HandlerFunc {
+	fmt.Println("Entered in login controller")
+	return func(c *gin.Context) {
+		// read json
+		var loginRequest model.LoginRequest
+		err := c.ShouldBindJSON(&loginRequest) // decoder ignore "name"
+
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			c.JSON(400, gin.H{
+				"error": "BAD Request",
+			})
+			return
+		}
+		token, err := service.Login(database, loginRequest)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error": err.Error(),
+			})
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json") // type json
-		json.NewEncoder(w).Encode("Signup Successful")     // message : successful
+		// sending response
+		c.JSON(200, gin.H{
+			"message": "Login Successful",
+			"token":   token,
+		})
 	}
 }
 
-func LoginController(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Entered in login controller")
-
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST method allowed", http.StatusBadRequest)
+func ProfileController(c *gin.Context) {
+	email, exists := c.Get("email")
+	if !exists {
+		c.JSON(401, gin.H{
+			"error": "User email not found",
+		})
 		return
 	}
-
-	// read json
-	var loginRequest model.LoginRequest
-	err := json.NewDecoder(r.Body).Decode(&loginRequest) // decoder ignore "name"
-
-	if err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-	token, err := service.Login(loginRequest)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// sending response
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Login Successful",
-		"token":   token,
-	})
-}
-
-func ProfileController(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Entered in Profile controller.....")
-
-	if r.Method != http.MethodGet {
-		http.Error(w, "Only GET method allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"name":  "Amit",
-		"email": "aksharma@gmail.com",
+	c.JSON(200, gin.H{
+		"message": "Profile accessed successfully",
+		"email":   email,
 	})
 }

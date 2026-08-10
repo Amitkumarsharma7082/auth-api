@@ -5,7 +5,8 @@ import (
 	"auth-api/handler"
 	"fmt"
 	"log"
-	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -16,14 +17,13 @@ func main() {
 	}
 
 	defer database.Close()
-
 	fmt.Println("Database connected")
+	router := gin.Default()
 
-	handler.RegisterRoutes(database)
-
+	handler.RegisterRoutes(router, database)
 	fmt.Println("Starting Server on :8080")
 
-	err = http.ListenAndServe(":8080", nil)
+	err = router.Run(":8080")
 	if err != nil {
 		fmt.Println("Server Error:", err)
 	}

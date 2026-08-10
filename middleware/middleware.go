@@ -2,12 +2,73 @@ package middleware
 
 import (
 	"fmt"
-	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// Gin
+func AuthMiddleware(c *gin.Context) {
+
+	authHeader := c.GetHeader("Authorization")
+
+	if authHeader == "" {
+		c.JSON(401, gin.H{
+			"error": "Authorization header required",
+		})
+		return
+	}
+
+	parts := strings.Split(authHeader, " ")
+
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		c.JSON(401, gin.H{
+			"error": "Invalid Authorization header",
+		})
+		return
+	}
+
+	tokenString := parts[1]
+
+	fmt.Println("Token:", tokenString)
+
+	token, err := jwt.Parse(
+		tokenString,
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte("my-secret-key"), nil
+		},
+	)
+
+	if err != nil || !token.Valid {
+		c.JSON(401, gin.H{
+			"error": "Invalid token",
+		})
+		return
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(401, gin.H{
+			"error": "Invalid token",
+		})
+		return
+	}
+
+	email, ok := claims["email"].(string)
+	if !ok {
+		c.JSON(401, gin.H{
+			"error": "Email not found in token",
+		})
+		return
+	}
+
+	c.Set("email", email)
+
+	c.Next()
+}
+
+/*
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc { // after middleware run handlerfunc
 	return func(w http.ResponseWriter, r *http.Request) { // middleware return a func, output func
 		fmt.Println("Entered in middleware....")
@@ -35,7 +96,7 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc { // after middlewar
 		next(w, r) // end the middleware work , next controller
 	}
 }
-
+*/
 /*
 3 case tested
 1. no header // unauthorized

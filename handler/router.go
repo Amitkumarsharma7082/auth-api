@@ -5,14 +5,16 @@ import (
 	"auth-api/middleware"
 	"database/sql"
 	"fmt"
-	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(database *sql.DB) {
+func RegisterRoutes(router *gin.Engine, database *sql.DB) {
 	fmt.Println("Register route")
-	http.HandleFunc("/signup", controller.SingupController(database))
-	http.HandleFunc("/login", controller.LoginController)
-	http.HandleFunc("/profile",
-		middleware.AuthMiddleware(controller.ProfileController),
-	)
+	router.POST("/signup", controller.SingupController(database))
+	router.POST("/login", controller.LoginController(database))
+	router.GET("/profile", middleware.AuthMiddleware, controller.ProfileController)
+	// http.HandleFunc("/profile",
+	// 	middleware.AuthMiddleware(controller.ProfileController),
+	// )
 }

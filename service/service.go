@@ -20,12 +20,13 @@ func Singup(database *sql.DB, user model.User) error {
 	return nil
 }
 
-func Login(loginRequest model.LoginRequest) (string, error) { // login service return token+err
+func Login(database *sql.DB, loginRequest model.LoginRequest) (string, error) { // login service return token+err
 	fmt.Println("Entered in Login request")
-	user, ok := db.Users[loginRequest.Email] // browser send loginReq and db search true/false
-	if !ok {
-		return "", errors.New("User not found")
+	user, err := db.GetUserByEmail(database, loginRequest.Email) // browser send loginReq and db search true/false
+	if err != nil {
+		return "", err
 	}
+	
 	if user.Password != loginRequest.Password {
 		return "", errors.New("invalid password")
 	}
